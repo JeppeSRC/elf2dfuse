@@ -366,10 +366,10 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	vendorId = fromHex(argv[3]);
-	productId = fromHex(argv[4]);
+	vendorId = fromHex(argv[3]) & 0xFFFF;
+	productId = fromHex(argv[4]) & 0xFFFF;
 
-	printf("VendorID: 0x%x04\nProductID: 0x%x04\n", vendorId, productId);
+	printf("VendorID: 0x%04x\nProductID: 0x%04x\n", vendorId, productId);
 
 	/*
 	read (and check) ELF header
