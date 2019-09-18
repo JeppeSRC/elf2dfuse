@@ -26,9 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define USB_VENDOR_ID  0x0483
-#define USB_PRODUCT_ID 0xdf11
-
 typedef struct Elf32_Ehdr
 {
 	uint8_t e_ident[16];
@@ -328,6 +325,16 @@ static uint32_t crc32_calc(uint32_t crc, uint8_t *buffer, uint32_t length)
 	return crc;
 }
 
+uint16_t fromHex(const char* string) {
+	if (string[1] == 'x' || string[1] == 'X')
+		return (uint16_t)strtol(string + 2, 0, 16);
+
+	return (uint16_t)strtol(string, 0, 16);
+}
+
+uint16_t vendorId;
+uint16_t productId;
+
 int main(int argc, char *argv[])
 {
 	FILE *elffp;
@@ -339,9 +346,9 @@ int main(int argc, char *argv[])
 	uint32_t phy_addr, image_elements, file_size, crc32, target_size, element_size;
 	uint8_t scratchpad[274 /* sized specifically for DfuSe Target Prefix */];
 
-	if (argc < 3)
+	if (argc < 5)
 	{
-		printf("%s <input.elf> <output.dfu>\n", argv[0]);
+		printf("%s <input.elf> <output.dfu> <vendorId in hex> <productId in hex>\n", argv[0]);
 		return -1;
 	}
 
@@ -358,6 +365,11 @@ int main(int argc, char *argv[])
 		printf("ERROR: unable to open file <%s> for writing\n", argv[2]);
 		return -1;
 	}
+
+	vendorId = fromHex(argv[3]);
+	productId = fromHex(argv[4]);
+
+	printf("VendorID: 0x%x04\nProductID: 0x%x04\n", vendorId, productId);
 
 	/*
 	read (and check) ELF header
@@ -544,10 +556,10 @@ int main(int argc, char *argv[])
 	i = 0;
 	scratchpad[i++] = 0xFF; // bcdDevice
 	scratchpad[i++] = 0xFF;
-	scratchpad[i++] = (uint8_t)(USB_PRODUCT_ID >> 0); // idProduct
-	scratchpad[i++] = (uint8_t)(USB_PRODUCT_ID >> 8);
-	scratchpad[i++] = (uint8_t)(USB_VENDOR_ID >> 0); // idVendor
-	scratchpad[i++] = (uint8_t)(USB_VENDOR_ID >> 8);
+	scratchpad[i++] = (uint8_t)(productId >> 0); // idProduct
+	scratchpad[i++] = (uint8_t)(productId >> 8);
+	scratchpad[i++] = (uint8_t)(vendorId >> 0); // idVendor
+	scratchpad[i++] = (uint8_t)(vendorId >> 8);
 	scratchpad[i++] = 0x1A; // bcdDFU
 	scratchpad[i++] = 0x01;
 	scratchpad[i++] = 'U'; // ucDfuSignature
